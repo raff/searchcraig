@@ -36,3 +36,9 @@ Usage:
     	Search in title only
     -today
     	Added today
+
+For example:
+
+    searchcraigs -browse -cat=free record player
+    
+Search for a free record player (and show results in a browser)
