@@ -495,7 +495,7 @@ func main() {
 	min := flag.Int("min", 0, "Min price")
 	max := flag.Int("max", 0, "Max price")
 	html := flag.Bool("html", false, "Return an HTML page")
-	browse := flag.Bool("browse", false, "Create HTML page and open browser")
+	browse := flag.Bool("browse", true, "Create HTML page and open browser")
 	flag.Parse()
 
 	query := strings.Join(flag.Args(), " ")
