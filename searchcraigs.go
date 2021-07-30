@@ -223,6 +223,14 @@ func Today(today bool) SearchOption {
 	}
 }
 
+func Nearby(nearby bool) SearchOption {
+	return func(params map[string]interface{}) {
+		if nearby {
+			params["searchNearby"] = 1
+		}
+	}
+}
+
 func Dedup(dedup bool) SearchOption {
 	return func(params map[string]interface{}) {
 		if dedup {
@@ -496,6 +504,7 @@ func main() {
 	max := flag.Int("max", 0, "Max price")
 	html := flag.Bool("html", false, "Return an HTML page")
 	browse := flag.Bool("browse", true, "Create HTML page and open browser")
+	nearby := flag.Bool("nearby", false, "Search nearby")
 	flag.Parse()
 
 	query := strings.Join(flag.Args(), " ")
@@ -509,6 +518,7 @@ func main() {
 		Sort(SortType(*sort)),
 		TitleOnly(*titleOnly),
 		Today(*today),
+		Nearby(*nearby),
 		MinPrice(*min),
 		MaxPrice(*max),
 		Query(query))
