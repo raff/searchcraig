@@ -70,7 +70,7 @@ const (
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>{{ .Query }}</title>
+    <title>{{ .Title }}</title>
 
     <style>
 
@@ -101,7 +101,10 @@ const (
     </style>
   <head>
   <body>
-    <h2>{{ .Query }}</h2>
+    <h2><a href="{{ .Url }}">{{ .Title }}</a></h2>
+    {{ if .Subtitle }}
+    <h4>{{ .Subtitle }}
+    {{ end }}
 
     {{ range .Entries }}
     <hr/>
@@ -161,10 +164,12 @@ func (entry ResultEntry) Hash() uint64 {
 }
 
 type SearchResults struct {
-	Query   string
-	Entries []ResultEntry
-	Prev    string
-	Next    string
+	Title    string
+	Subtitle string
+	Url      string
+	Entries  []ResultEntry
+	Prev     string
+	Next     string
 }
 
 type SearchOption func(params map[string]interface{})
@@ -226,7 +231,7 @@ func Today(today bool) SearchOption {
 func Nearby(nearby bool) SearchOption {
 	return func(params map[string]interface{}) {
 		if nearby {
-			params["searchNearby"] = 1
+			params["searchNearby"] = 2
 		}
 	}
 }
@@ -321,10 +326,12 @@ func (c *ClClient) Search(options ...SearchOption) (*SearchResults, error) {
 	var results SearchResults
 
 	if q, ok := params["query"]; ok {
-		results.Query = q.(string)
+		results.Title = q.(string)
 	} else {
-		results.Query = "Results"
+		results.Title = "Results"
 	}
+
+	results.Url = res.Response.Request.URL.String()
 
 	dedup := params["bundleDuplicates"] != nil
 	duplicates := map[uint64]bool{}
@@ -412,14 +419,8 @@ func applyFilter(f string, in []ResultEntry) (out []ResultEntry) {
 
 	f = strings.ToLower(f)
 
-	var neg bool
 	var any bool
 	var fpat []string
-
-	if strings.HasPrefix(f, "^") {
-		neg = true
-		f = f[1:]
-	}
 
 	if strings.Contains(f, "|") { // any
 		any = true
@@ -431,39 +432,52 @@ func applyFilter(f string, in []ResultEntry) (out []ResultEntry) {
 		fpat = []string{f}
 	}
 
+	neg := map[string]bool{}
+	mcount := 0
+	ncount := 0
+
+	for i, f := range fpat {
+		if strings.HasPrefix(f, "-") {
+			fv := f[1:]
+			fpat[i] = fv
+			neg[fv] = true
+			ncount++
+		} else {
+			mcount++
+		}
+	}
+
 	out = make([]ResultEntry, 0, len(in))
 	re := regexp.MustCompile("(" + strings.Join(fpat, "|") + ")")
 
 	for _, r := range in {
 		res := re.FindAllString(strings.ToLower(r.Title), -1)
 		if len(res) == 0 {
-			if neg {
+			if ncount == len(fpat) { // all negative
 				out = append(out, r)
 			}
 
 			continue
 		}
 
-		if any { // any match count
-			if !neg {
-				out = append(out, r)
-			}
-			continue
-		}
-
-		// check that all pattern matched
-		matches := map[string]bool{}
+		// check that all positive pattern matched
+		matches := 0
+		nmatches := 0
 
 		for _, v := range res {
-			matches[v] = true
+			if neg[v] {
+				nmatches++
+			} else {
+				matches++
+			}
 		}
 
-		match := len(matches) == len(fpat)
-		if neg {
-			match = !match
+		if nmatches > 0 {
+			continue
 		}
 
-		if match {
+		if matches == mcount || // all positive matches
+			(any && matches > 0) { // any positive match
 			out = append(out, r)
 		}
 	}
@@ -505,6 +519,7 @@ func main() {
 	html := flag.Bool("html", false, "Return an HTML page")
 	browse := flag.Bool("browse", true, "Create HTML page and open browser")
 	nearby := flag.Bool("nearby", false, "Search nearby")
+	//url := flag.Bool("url", false, "Display Craigslist URL")
 	flag.Parse()
 
 	query := strings.Join(flag.Args(), " ")
@@ -529,9 +544,8 @@ func main() {
 	}
 
 	if *filter != "" {
-		res.Query = fmt.Sprintf("%v (filter: %v)", res.Query, *filter)
+		res.Subtitle = fmt.Sprintf("(filter: %v)", *filter)
 		res.Entries = applyFilter(*filter, res.Entries)
-
 	}
 
 	if *browse {
