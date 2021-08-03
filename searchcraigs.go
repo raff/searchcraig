@@ -55,7 +55,7 @@ const (
 
 	ForSale     = Category("sss")
 	Bikes       = Category("bia")
-	Boats       = Category("boo")
+	Boats       = Category("boa")
 	Cars        = Category("cta")
 	Cellphones  = Category("moa")
 	Computers   = Category("sya")
@@ -198,6 +198,12 @@ func WithCategory(c Category) SearchOption {
 	}
 }
 
+func By(by string) SearchOption {
+	return func(params map[string]interface{}) {
+		params["by"] = by
+	}
+}
+
 func Query(q string) SearchOption {
 	return func(params map[string]interface{}) {
 		params["query"] = q
@@ -231,7 +237,7 @@ func Today(today bool) SearchOption {
 func Nearby(nearby bool) SearchOption {
 	return func(params map[string]interface{}) {
 		if nearby {
-			params["searchNearby"] = 2
+			params["searchNearby"] = 1
 		}
 	}
 }
@@ -296,6 +302,7 @@ func (c *ClClient) Search(options ...SearchOption) (*SearchResults, error) {
 	}
 
 	path := ""
+	cat := string(ForSale)
 
 	if r, ok := params["subregion"]; ok {
 		path = r.(string) + "/"
@@ -303,11 +310,26 @@ func (c *ClClient) Search(options ...SearchOption) (*SearchResults, error) {
 	}
 
 	if c, ok := params["category"]; ok {
-		path += c.(string)
-		delete(params, "category")
-	} else {
-		path += string(ForSale)
+		cat = c.(string)
 	}
+
+	if by, ok := params["by"]; ok {
+		delete(params, "by")
+
+		switch by {
+		case "owner":
+			if strings.HasSuffix(cat, "a") {
+				cat = cat[:len(cat)-1] + "o"
+			}
+
+		case "dealer":
+			if strings.HasSuffix(cat, "d") {
+				cat = cat[:len(cat)-1] + "d"
+			}
+		}
+	}
+
+	path += cat
 
 	reqs = append(reqs, httpclient.Path(path))
 	reqs = append(reqs, httpclient.Params(params))
@@ -508,6 +530,7 @@ func main() {
 	region := flag.String("region", "sfbay", "Region")
 	subregion := flag.String("subregion", "", "Subregion")
 	cat := flag.String("cat", "sss", "Category")
+	by := flag.String("by", "all", "all, owner, dealer")
 	dedup := flag.Bool("dedup", true, "Bundle duplicates")
 	pictures := flag.Bool("pictures", true, "Has pictures")
 	sort := flag.String("sort", "", "Sort type (priceasc,pricedsc,date,rel")
@@ -528,6 +551,7 @@ func main() {
 	res, err := cl.Search(
 		WithSubregion(SubRegion(*subregion)),
 		WithCategory(mapCategory(*cat)),
+		By(*by),
 		Dedup(*dedup),
 		Pictures(*pictures),
 		Sort(SortType(*sort)),
