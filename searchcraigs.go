@@ -69,61 +69,45 @@ const (
 	pageTemplate = `<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8">
     <title>{{ .Title }}</title>
-
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
     <style>
-
-    .row {
-      padding: 4px;
-    }
-
-    /* Clear floats after the columns */
-    .row:after {
-      content: "";
-      display: table;
-      clear: both;
-    }
-
-    .column {
-      padding: 4px;
-    }
-
-    .left {
-      float: left;
-      width: 300px;
-    }
-
-    .right {
-        width: 100%;
-    }
-
+      .indent {
+        padding-left: 12px;
+      }
     </style>
   <head>
   <body>
-    <h2><a href="{{ .Url }}">{{ .Title }}</a></h2>
-    {{ if .Subtitle }}
-    <h4>({{ .Subtitle }})
-    {{ end }}
+    <h2>
+      <a href="{{ .Url }}">{{ .Title }}</a>
+      {{ if .Subtitle }}
+        <small>({{ .Subtitle }})</small>
+      {{ end }}
+    </h2>
 
+    <div class="container">
     {{ range .Entries }}
-    <hr/>
+      <div class="row">
+        <div class="col-sm-2">
+          <img src="{{ .Image }}">
+        </div>
 
-    <div class="row">
-      <div class="column left">
-        <img src="{{ .Image }}">
+        <div class="col-sm-10">
+          <h3>
+            <a href="{{ .Href }}">{{ .Title }}</a>
+            <small>Added: {{ .Datetime }}</small>
+          </h3>
+          <div class="indent">
+          Price: {{ .Price }}<br/>
+          {{ or .NearbyDesc .Neighborhood }}
+          </div>
+        </div>
       </div>
-
-      <div class="column right">
-        <a href="{{ .Href }}"><h3>{{ .Title }}</h3></a>
-        Added: {{ .Datetime }}<br/>
-        Price: {{ .Price }}<br/>
-        {{ or .NearbyDesc .Neighborhood }}
-      </div>
-    </div>
-    {{ else }}
-    No results
+      {{ else }}
+      No results
     {{ end }}
+    </div>
 
   </body>
 </html>
