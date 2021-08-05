@@ -103,7 +103,7 @@ const (
   <body>
     <h2><a href="{{ .Url }}">{{ .Title }}</a></h2>
     {{ if .Subtitle }}
-    <h4>{{ .Subtitle }}
+    <h4>({{ .Subtitle }})
     {{ end }}
 
     {{ range .Entries }}
@@ -459,7 +459,11 @@ func applyFilter(f string, in []ResultEntry) (out []ResultEntry) {
 	ncount := 0
 
 	for i, f := range fpat {
-		if strings.HasPrefix(f, "-") {
+		if len(f) == 0 { // shouldn't happen but...
+			log.Fatalf("empty filter in %q", fpat)
+		}
+
+		if strings.ContainsAny(f[:1], "-!^") {
 			fv := f[1:]
 			fpat[i] = fv
 			neg[fv] = true
@@ -567,8 +571,12 @@ func main() {
 		return
 	}
 
+	if *sort != "" {
+		res.Subtitle = fmt.Sprintf("Sort: %v", *sort)
+	}
+
 	if *filter != "" {
-		res.Subtitle = fmt.Sprintf("(filter: %v)", *filter)
+		res.Subtitle = strings.TrimPrefix(fmt.Sprintf("%v, Filter: %v", res.Subtitle, *filter), ", ")
 		res.Entries = applyFilter(*filter, res.Entries)
 	}
 
