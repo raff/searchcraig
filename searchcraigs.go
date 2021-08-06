@@ -564,7 +564,7 @@ func main() {
 		res.Entries = applyFilter(*filter, res.Entries)
 	}
 
-	if *browse {
+	if *html && *browse {
 		var b bytes.Buffer
 		t := template.Must(template.New("webpage").Parse(pageTemplate))
 		t.Execute(&b, res)
