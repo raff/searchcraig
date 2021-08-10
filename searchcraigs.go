@@ -355,7 +355,7 @@ func (c *ClClient) Search(options ...SearchOption) (*SearchResults, error) {
 
 		image := ""
 		ids := strings.Split(iids, ",")
-		if len(ids) > 0 {
+		if len(iids) > 0 && len(ids) > 0 {
 			parts := strings.Split(ids[0], ":")
 			image = fmt.Sprintf("https://images.craigslist.org/%v_300x300.jpg", parts[1])
 		}
@@ -527,7 +527,7 @@ func main() {
 	today := flag.Bool("today", false, "Added today")
 	min := flag.Int("min", 0, "Min price")
 	max := flag.Int("max", 0, "Max price")
-	html := flag.Bool("html", false, "Return an HTML page")
+	html := flag.Bool("html", true, "Return an HTML page")
 	browse := flag.Bool("browse", true, "Create HTML page and open browser")
 	nearby := flag.Bool("nearby", false, "Search nearby")
 	//url := flag.Bool("url", false, "Display Craigslist URL")
