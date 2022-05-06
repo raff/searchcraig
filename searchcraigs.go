@@ -337,10 +337,11 @@ func (c *ClClient) Search(options ...SearchOption) (*SearchResults, error) {
 	reqs = append(reqs, httpclient.Params(params))
 	reqs = append(reqs, httpclient.Accept("*/*"))
 	res, err := httpclient.CheckStatus(c.h.SendRequest(reqs...))
-	results := SearchResults{Url: res.Response.Request.URL.String()}
 	if err != nil {
-		return &results, err
+		return nil, err
 	}
+
+	results := SearchResults{Url: res.Response.Request.URL.String()}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	res.Body.Close()
@@ -573,7 +574,11 @@ func main() {
 		Query(query))
 
 	if err != nil {
-		log.Fatalf("ERROR %v: %v", res.Url, err)
+		if res != nil {
+			log.Fatalf("ERROR %v: %v", res.Url, err)
+		}
+
+		log.Fatalf("ERROR: %v", err)
 	}
 
 	if *sort != "" {
